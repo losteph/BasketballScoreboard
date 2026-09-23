@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Basket Scoreboard</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #131b2e;
+      --card-sub: #1b2640;
+      --card-accent: #263559;
+      --home-color: #3b82f6;
+      --away-color: #ef4444;
+      --accent-orange: #f97316;
+      --accent-orange-glow: rgba(249, 115, 22, 0.35);
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #263559;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(6px, 2vw, 16px);
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 2vw, 12px);
+    }
+
+    /* Header & Timer */
+    .header {
+      background: linear-gradient(145deg, var(--card-bg), var(--card-sub));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(10px, 2.5vw, 16px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .period-badge {
+      background: var(--card-accent);
+      color: var(--accent-orange);
+      font-weight: 800;
+      font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+      padding: 4px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+    }
+
+    .format-badge {
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--accent-purple);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      font-weight: 800;
+      font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .timer-display {
+      font-family: "Courier New", Courier, monospace;
+      font-size: clamp(2rem, 7vw, 2.7rem);
+      font-weight: 900;
+      color: var(--accent-orange);
+      letter-spacing: 1px;
+      text-shadow: 0 0 14px var(--accent-orange-glow);
+    }
+
+    .timer-display.danger {
+      color: var(--accent-red);
+      animation: pulse 0.8s infinite;
+      text-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.75; transform: scale(1.02); }
+    }
+
+    /* Shot Clock 24s / 14s */
+    .shotclock-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .shotclock-val {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #ef4444;
+      min-width: 45px;
+      text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+
+    .shotclock-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-shot {
+      background: var(--card-sub);
+      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-shot.active-shot {
+      background: var(--accent-orange);
+      border-color: var(--accent-orange);
+    }
+
+    /* Config Bar */
+    .config-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--card-bg);
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+    }
+
+    .config-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .config-inputs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .config-inputs input[type="number"] {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-weight: bold;
+      outline: none;
+      font-size: 0.75rem;
+      width: 44px;
+      text-align: center;
+    }
+
+    .toggle-group {
+      display: flex;
+      background: var(--card-sub);
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .toggle-btn.active {
+      background: var(--accent-orange);
+      color: #fff;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(6px, 2vw, 12px);
+    }
+
+    .team-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-top: 5px solid var(--team-border-color, #3b82f6);
+      border-radius: 16px;
+      padding: clamp(8px, 2vw, 14px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    .team-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .team-name-input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: clamp(0.85rem, 2.5vw, 1.05rem);
+      font-weight: 800;
+      text-align: center;
+      width: 100%;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    .score-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+      padding: 4px 0;
+    }
+
+    .score-num {
+      font-size: clamp(3rem, 10vw, 4.4rem);
+      font-weight: 900;
+      color: #fff;
+    }
+
+    /* Team Fouls & Bonus Badge */
+    .team-bonus-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--card-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      margin-bottom: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .team-bonus-badge.active-bonus {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--accent-red);
+      color: #fca5a5;
+      font-weight: 900;
+      animation: pulse 1.2s infinite;
+    }
+
+    /* Solo tasti punti: +3, +2, +1 a tutta larghezza */
+    .team-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-pts {
+      background: var(--card-sub);
+      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: clamp(0.78rem, 2vw, 0.9rem);
+      padding: 9px 2px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-pts.pts-3 {
+      background: rgba(249, 115, 22, 0.2);
+      border-color: var(--accent-orange);
+      color: #ff9d5c;
+    }
+
+    .btn-pts.pts-2 {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    .btn-pts.pts-1 {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: #10b981;
+      color: #6ee7b7;
+    }
+
+    /* Controls Bar & Periods */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 6px;
+    }
+
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .btn-main {
+      background: var(--accent-orange);
+      color: #fff;
+      font-weight: 900;
+      font-size: clamp(0.75rem, 2vw, 0.85rem);
+      border: none;
+      padding: clamp(8px, 2vw, 12px);
+      border-radius: 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 2px 10px var(--accent-orange-glow);
+    }
+
+    .btn-main.paused {
+      background: var(--accent-yellow);
+      color: #451a03;
+      box-shadow: none;
+    }
+
+    .btn-sec {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+      border-radius: 10px;
+      cursor: pointer;
+      padding: 8px 2px;
+      text-align: center;
+    }
+
+    .btn-sec.active-period {
+      background: var(--accent-orange);
+      color: #fff;
+      border-color: var(--accent-orange);
+      font-weight: 900;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--accent-red);
+      font-weight: 700;
+      font-size: clamp(0.72rem, 1.9vw, 0.82rem);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* Roster */
+    .roster-section {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    @media (min-width: 520px) {
+      .roster-section {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .roster-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--team-border-color, var(--border));
+      border-top: 5px solid var(--team-border-color, #3b82f6);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    .roster-card.home {
+      --team-border-color: var(--home-color);
+    }
+
+    .roster-card.away {
+      --team-border-color: var(--away-color);
+    }
+
+    .roster-title {
+      font-size: clamp(0.7rem, 2vw, 0.8rem);
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    .player-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-sub);
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: clamp(0.7rem, 2vw, 0.8rem);
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+
+    .player-row.bench-mode {
+      opacity: 0.65;
+      border-style: dashed;
+    }
+
+    .player-left-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .player-num-tag {
+      font-weight: 900;
+      color: var(--accent-orange);
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    .fouls-tag {
+      font-size: 0.65rem;
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-weight: 800;
+    }
+
+    .fouls-tag.foul-out {
+      background: var(--accent-red);
+      color: #fff;
+    }
+
+    .status-toggle {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 3px 6px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .status-toggle.field {
+      background: rgba(249, 115, 22, 0.2);
+      color: var(--accent-orange);
+      border-color: rgba(249, 115, 22, 0.4);
+    }
+
+    .btn-icon-del {
+      background: transparent;
+      border: none;
+      color: var(--accent-red);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+
+    .add-player-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .add-player-row input {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      outline: none;
+    }
+
+    .btn-add-mini {
+      background: var(--accent-orange);
+      color: #fff;
+      border: none;
+      font-weight: 900;
+      padding: 0 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Live Events List */
+    .events-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .events-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .event-item {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(0.72rem, 2vw, 0.82rem);
+    }
+
+    .event-minute {
+      font-family: monospace;
+      font-weight: 800;
+      color: var(--accent-orange);
+      background: rgba(249, 115, 22, 0.15);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Bottom Actions */
+    .action-grid-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-action-main {
+      background: var(--accent-purple);
+      color: #fff;
+      font-weight: 900;
+      font-size: 0.8rem;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 12px;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .custom-select, .form-group input {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .sub-box {
+      border: 1px solid var(--border);
+      background: rgba(26, 35, 58, 0.4);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-grid-minimal {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-act {
+      padding: 12px 4px;
+      border-radius: 9px;
+      border: none;
+      font-weight: 800;
+      font-size: 0.76rem;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .history-card {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="badge-row">
+          <span class="period-badge" id="period-badge">1° Quarto</span>
+          <span class="format-badge" id="format-badge">5 vs 5</span>
+        </div>
+        <span style="font-size:0.65rem; color:var(--text-muted);" id="timer-status-text">Conto alla Rovescia</span>
+      </div>
+      <div class="timer-display" id="timer-display">10:00</div>
+    </div>
+
+    <!-- Shot Clock 24s / 14s (Sempre Presente) -->
+    <div class="shotclock-card">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Possesso:</span>
+        <div class="shotclock-val" id="shotclock-display">24</div>
+      </div>
+      <div class="shotclock-actions">
+        <button class="btn-shot" id="btn-shot-toggle" onclick="toggleShotClock()">▶ Start</button>
+        <button class="btn-shot" onclick="resetShotClock(24)">24s</button>
+        <button class="btn-shot" onclick="resetShotClock(14)">14s</button>
+      </div>
+    </div>
+
+    <!-- Timer Settings Bar -->
+    <div class="config-bar">
+      <div class="config-row">
+        <span style="font-weight:700; color:var(--text-muted);">Modalità Timer:</span>
+        <div class="toggle-group">
+          <button id="mode-down" class="toggle-btn active" onclick="setTimerMode('countdown')">Rovescia ⏳</button>
+          <button id="mode-up" class="toggle-btn" onclick="setTimerMode('countup')">Avanti ⏱️</button>
+        </div>
+      </div>
+      <div class="config-row">
+        <span style="font-weight:700; color:var(--text-muted);">Durata Quarto:</span>
+        <div class="config-inputs">
+          <input type="number" id="input-minutes" value="10" min="0" max="60">m
+          <input type="number" id="input-seconds" value="00" min="0" max="59">s
+          <button onclick="applyDurationSettings()" class="btn-sec" style="padding:4px 8px; font-size:0.7rem;">Set</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+      <!-- Casa -->
+      <div class="team-card home" id="card-home">
+        <div class="team-header-row">
+          <input type="color" id="picker-home" value="#3b82f6" style="width:20px;height:20px;border:none;background:none;cursor:pointer;" onchange="updateColors()">
+          <input type="text" id="name-home" value="CASA" class="team-name-input" onchange="saveState()">
+        </div>
+        <div class="score-container">
+          <div class="score-num" id="score-home">0</div>
+        </div>
+        <div class="team-bonus-badge" id="bonus-home">Falli Quarto: 0/4</div>
+        <div class="team-actions-grid">
+          <button class="btn-pts pts-3" onclick="quickScore('home', 3)">+3</button>
+          <button class="btn-pts pts-2" onclick="quickScore('home', 2)">+2</button>
+          <button class="btn-pts pts-1" onclick="quickScore('home', 1)">+1</button>
+        </div>
+      </div>
+
+      <!-- Ospiti -->
+      <div class="team-card away" id="card-away">
+        <div class="team-header-row">
+          <input type="color" id="picker-away" value="#ef4444" style="width:20px;height:20px;border:none;background:none;cursor:pointer;" onchange="updateColors()">
+          <input type="text" id="name-away" value="OSPITI" class="team-name-input" onchange="saveState()">
+        </div>
+        <div class="score-container">
+          <div class="score-num" id="score-away">0</div>
+        </div>
+        <div class="team-bonus-badge" id="bonus-away">Falli Quarto: 0/4</div>
+        <div class="team-actions-grid">
+          <button class="btn-pts pts-3" onclick="quickScore('away', 3)">+3</button>
+          <button class="btn-pts pts-2" onclick="quickScore('away', 2)">+2</button>
+          <button class="btn-pts pts-1" onclick="quickScore('away', 1)">+1</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls-grid">
+      <button class="btn-main" id="btn-start" onclick="toggleTimer()">▶ Avvia</button>
+      <button class="btn-danger" onclick="confirmResetOnly()">🔄 Reset</button>
+      <button class="btn-action-main" style="background:var(--accent-red); margin:0;" onclick="confirmEndMatch()">🏁 Fine</button>
+    </div>
+
+    <!-- Period Selectors: Basket Quarters & Overtimes -->
+    <div class="period-grid">
+      <button class="btn-sec active-period" id="p-btn-1" onclick="selectPeriod(1, '1° Quarto')">1°Q</button>
+      <button class="btn-sec" id="p-btn-2" onclick="selectPeriod(2, '2° Quarto')">2°Q</button>
+      <button class="btn-sec" id="p-btn-3" onclick="selectPeriod(3, '3° Quarto')">3°Q</button>
+      <button class="btn-sec" id="p-btn-4" onclick="selectPeriod(4, '4° Quarto')">4°Q</button>
+      <button class="btn-sec" id="p-btn-5" onclick="selectPeriod(5, 'Overtime')">1°OT</button>
+      <button class="btn-sec" id="p-btn-6" onclick="selectPeriod(6, '2° Overtime')">2°OT</button>
+    </div>
+
+    <!-- Dual Team Rosters -->
+    <div class="roster-section">
+      <!-- Casa Roster -->
+      <div class="roster-card home" id="roster-card-home">
+        <div class="roster-title">
+          <span>Squadra Casa</span>
+          <span id="count-home" style="color:var(--accent-orange);">5 In Campo</span>
+        </div>
+        <div class="player-list" id="list-home"></div>
+        <div class="add-player-row">
+          <input type="text" id="in-home-num" placeholder="#" style="width:30px; text-align:center;">
+          <input type="text" id="in-home-name" placeholder="Nome" style="flex:1;">
+          <button class="btn-add-mini" onclick="addPlayer('home')">+</button>
+        </div>
+      </div>
+
+      <!-- Ospiti Roster -->
+      <div class="roster-card away" id="roster-card-away">
+        <div class="roster-title">
+          <span>Squadra Ospiti</span>
+          <span id="count-away" style="color:var(--accent-orange);">5 In Campo</span>
+        </div>
+        <div class="player-list" id="list-away"></div>
+        <div class="add-player-row">
+          <input type="text" id="in-away-num" placeholder="#" style="width:30px; text-align:center;">
+          <input type="text" id="in-away-name" placeholder="Nome" style="flex:1;">
+          <button class="btn-add-mini" onclick="addPlayer('away')">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Event Feed -->
+    <div class="events-section">
+      <div class="events-header">
+        <span>Cronaca Partita</span>
+        <span id="event-count" style="font-size:0.7rem;">0 Eventi</span>
+      </div>
+      <div class="events-list" id="events-list">
+        <div style="color:var(--text-muted); font-size:0.75rem; text-align:center; padding:8px;">Nessun evento registrato.</div>
+      </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="action-grid-bottom">
+      <button class="btn-action-main" style="background:#0ea5e9;" onclick="openHistoryModal()">📚 Storico Partite</button>
+      <button class="btn-action-main" onclick="shareCurrentMatch()">📲 Condividi Tabellino</button>
+    </div>
+
+  </div>
+
+  <!-- MODAL AZIONE GIOCATORE BASKET (MINIMAL) -->
+  <div class="modal-overlay" id="action-modal">
+    <div class="modal-content">
+      <div class="modal-title" id="modal-player-title">🏀 Azione Giocatore</div>
+      
+      <div style="display:flex; gap:8px; width:100%;">
+        <div class="form-group" style="width:55px; flex-shrink:0;">
+          <label>N°</label>
+          <input type="text" id="modal-p-num" maxlength="3" style="text-align:center; padding:9px 4px;">
+        </div>
+        <div class="form-group" style="flex:1; min-width:0;">
+          <label>Nome Giocatore</label>
+          <input type="text" id="modal-p-name" style="width:100%;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Assistito da (Opzionale)</label>
+        <select id="modal-p-assist" class="custom-select"><option value="">Nessun Assist</option></select>
+      </div>
+
+      <!-- Azioni Essenziali -->
+      <div class="action-grid-minimal">
+        <button class="btn-act" style="background:rgba(249, 115, 22, 0.2); color:#ff9d5c; border:1px solid var(--accent-orange);" onclick="triggerAction('3PT')">🎯 Tripla (+3)</button>
+        <button class="btn-act" style="background:rgba(59, 130, 246, 0.2); color:#93c5fd; border:1px solid #3b82f6;" onclick="triggerAction('2PT')">🏀 Canestro (+2)</button>
+        <button class="btn-act" style="background:rgba(16, 185, 129, 0.2); color:#6ee7b7; border:1px solid #10b981;" onclick="triggerAction('1PT')">☄️ Libero (+1)</button>
+        
+        <button class="btn-act" style="background:rgba(239, 68, 68, 0.18); color:var(--accent-red); border:1px solid var(--accent-red); grid-column: span 2;" onclick="triggerAction('FOUL')">⚠️ Fallo</button>
+        <button class="btn-act" style="background:#8b5cf62a; color:#c4b5fd; border:1px solid var(--accent-purple);" onclick="triggerAction('REBOUND')">🖐️ Rimbalzo</button>
+      </div>
+
+      <!-- Sostituzioni -->
+      <div class="sub-box" id="sub-section">
+        <label style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Effettua Sostituzione:</label>
+        <select id="modal-sub-target" class="custom-select"></select>
+        <button class="btn-sec" style="background:var(--accent-purple); color:#fff; border:none; padding:10px; font-weight:800; border-radius:8px;" onclick="executeSubstitution()">🔄 Sostituisci</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:8px; margin-top:8px;">
+        <button class="btn-sec" style="flex:1; padding:8px;" onclick="closeModal('action-modal')">Chiudi</button>
+        <button class="btn-sec" style="flex:1; padding:8px; border-color:var(--accent-orange);" onclick="savePlayerEdit()">💾 Salva Info</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LISTA STORICO -->
+  <div class="modal-overlay" id="history-modal">
+    <div class="modal-content">
+      <div class="modal-title">📚 Storico Partite</div>
+      <div id="history-list-content"></div>
+      <button class="btn-sec" style="padding:10px;" onclick="closeModal('history-modal')">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- MODAL DETTAGLIO PARTITA ARCHIVIATA -->
+  <div class="modal-overlay" id="match-detail-modal">
+    <div class="modal-content">
+      <div class="modal-title">Dettaglio Partita Archiviata</div>
+      
+      <div class="form-group">
+        <label>Titolo Partita:</label>
+        <input type="text" id="detail-title" style="font-weight:bold;">
+      </div>
+
+      <div style="background:var(--card-sub); border:1px solid var(--border); padding:12px; border-radius:12px; text-align:center;">
+        <div style="font-size:1.3rem; font-weight:900; color:#fff;" id="detail-score">CASA 0 - 0 OSPITI</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;" id="detail-date"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Cronaca Completa:</label>
+        <div id="detail-events" style="display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; background:var(--card-sub); padding:8px; border-radius:8px; border:1px solid var(--border);"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:4px;">
+        <button class="btn-sec" style="background:var(--accent-orange); color:#fff; font-weight:bold; border:none; padding:8px;" onclick="saveRenamedHistory()">💾 Salva Modifiche</button>
+        <button class="btn-sec" style="background:var(--accent-purple); color:#fff; font-weight:bold; border:none; padding:8px;" onclick="shareArchivedMatch()">📲 Condividi</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+        <button class="btn-danger" style="padding:8px;" onclick="deleteArchivedMatch()">🗑️ Elimina</button>
+        <button class="btn-sec" style="padding:8px;" onclick="closeModal('match-detail-modal')">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let durationSeconds = 10 * 60;
+    let currentSeconds = 10 * 60;
+    let timerMode = 'countdown';
+    let currentPeriod = 1;
+    let periodLabelText = '1° Quarto';
+    let homeScore = 0;
+    let awayScore = 0;
+    let homeQuarterFouls = 0;
+    let awayQuarterFouls = 0;
+    let selectedPlayer = null;
+    let activeArchivedId = null;
+
+    // Shot clock 24s
+    let shotClockSeconds = 24;
+    let shotClockInterval = null;
+    let isShotClockRunning = false;
+
+    // Roster 5v5 con ruoli basket ufficiali + panchina
+    let players = {
+      home: [
+        { id: 1, num: "1", name: "Playmaker (PG)", inField: true, fouls: 0 },
+        { id: 2, num: "2", name: "Guardia (SG)", inField: true, fouls: 0 },
+        { id: 3, num: "3", name: "Ala Piccola (SF)", inField: true, fouls: 0 },
+        { id: 4, num: "4", name: "Ala Grande (PF)", inField: true, fouls: 0 },
+        { id: 5, num: "5", name: "Centro (C)", inField: true, fouls: 0 },
+        { id: 6, num: "6", name: "Riserva 1", inField: false, fouls: 0 },
+        { id: 7, num: "7", name: "Riserva 2", inField: false, fouls: 0 }
+      ],
+      away: [
+        { id: 101, num: "1", name: "Playmaker (PG)", inField: true, fouls: 0 },
+        { id: 102, num: "2", name: "Guardia (SG)", inField: true, fouls: 0 },
+        { id: 103, num: "3", name: "Ala Piccola (SF)", inField: true, fouls: 0 },
+        { id: 104, num: "4", name: "Ala Grande (PF)", inField: true, fouls: 0 },
+        { id: 105, num: "5", name: "Centro (C)", inField: true, fouls: 0 },
+        { id: 106, num: "6", name: "Riserva 1", inField: false, fouls: 0 },
+        { id: 107, num: "7", name: "Riserva 2", inField: false, fouls: 0 }
+      ]
+    };
+
+    let events = [];
+    let matchHistory = JSON.parse(localStorage.getItem('basket_history_v2') || '[]');
+    let alertLoopInterval = null;
+
+    function playEndAlert() {
+      stopEndAlert();
+      const buzzer = () => {
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.65);
+        } catch (e) {}
+
+        if (navigator.vibrate) {
+          try { navigator.vibrate([300, 100, 300]); } catch (e) {}
+        }
+      };
+
+      buzzer();
+      alertLoopInterval = setInterval(buzzer, 700);
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function getElapsedFormatted() {
+      if (timerMode === 'countdown') {
+        const elapsed = durationSeconds - currentSeconds;
+        return `${periodLabelText} (${formatTime(Math.max(0, elapsed))})`;
+      } else {
+        return `${periodLabelText} (${formatTime(currentSeconds)})`;
+      }
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById('timer-display');
+      el.textContent = formatTime(currentSeconds);
+      if (timerMode === 'countdown' && currentSeconds <= 10 && currentSeconds > 0) {
+        el.classList.add('danger');
+      } else {
+        el.classList.remove('danger');
+      }
+    }
+
+    /* Gestione Shot Clock 24s */
+    function updateShotClockDisplay() {
+      document.getElementById('shotclock-display').textContent = shotClockSeconds;
+    }
+
+    function toggleShotClock() {
+      const btn = document.getElementById('btn-shot-toggle');
+      if (isShotClockRunning) {
+        clearInterval(shotClockInterval);
+        shotClockInterval = null;
+        isShotClockRunning = false;
+        btn.textContent = '▶ Start';
+        btn.classList.remove('active-shot');
+      } else {
+        isShotClockRunning = true;
+        btn.textContent = '⏸ Pausa';
+        btn.classList.add('active-shot');
+        shotClockInterval = setInterval(() => {
+          if (shotClockSeconds > 0) {
+            shotClockSeconds--;
+            updateShotClockDisplay();
+          } else {
+            clearInterval(shotClockInterval);
+            shotClockInterval = null;
+            isShotClockRunning = false;
+            btn.textContent = '▶ Start';
+            btn.classList.remove('active-shot');
+            playEndAlert();
+            setTimeout(() => { alert("⏰ INFRAZIONE 24 SECONDI!"); stopEndAlert(); }, 30);
+          }
+        }, 1000);
+      }
+    }
+
+    function resetShotClock(val) {
+      shotClockSeconds = val;
+      updateShotClockDisplay();
+    }
+
+    function setTimerMode(mode) {
+      if (timerMode === mode) return;
+      timerMode = mode;
+      document.getElementById('mode-down').classList.toggle('active', mode === 'countdown');
+      document.getElementById('mode-up').classList.toggle('active', mode === 'countup');
+      document.getElementById('timer-status-text').textContent = mode === 'countdown' ? 'Conto alla Rovescia' : 'In Avanti';
+      currentSeconds = Math.max(0, durationSeconds - currentSeconds);
+      updateTimerDisplay();
+      saveState();
+    }
+
+    function applyDurationSettings() {
+      const min = parseInt(document.getElementById('input-minutes').value) || 0;
+      const sec = parseInt(document.getElementById('input-seconds').value) || 0;
+      durationSeconds = (min * 60) + sec;
+      currentSeconds = timerMode === 'countdown' ? durationSeconds : 0;
+      updateTimerDisplay();
+      saveState();
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('btn-start');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = '▶ Avvia';
+        btn.classList.remove('paused');
+        if (isShotClockRunning) toggleShotClock();
+      } else {
+        timerInterval = setInterval(() => {
+          if (timerMode === 'countdown') {
+            if (currentSeconds > 0) {
+              currentSeconds--;
+              updateTimerDisplay();
+            } else {
+              finishTimer();
+            }
+          } else {
+            if (currentSeconds < durationSeconds) {
+              currentSeconds++;
+              updateTimerDisplay();
+            } else {
+              finishTimer();
+            }
+          }
+          saveState();
+        }, 1000);
+        btn.textContent = '⏸ Pausa';
+        btn.classList.add('paused');
+      }
+    }
+
+    function stopEndAlert() {
+      if (alertLoopInterval) {
+        clearInterval(alertLoopInterval);
+        alertLoopInterval = null;
+      }
+    }
+
+    function finishTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      const btn = document.getElementById('btn-start');
+      btn.textContent = '▶ Avvia';
+      btn.classList.remove('paused');
+      if (isShotClockRunning) toggleShotClock();
+      
+      playEndAlert();
+      setTimeout(() => {
+        alert(`🚨 SIRENA: FINE ${periodLabelText.toUpperCase()}!`);
+        stopEndAlert();
+      }, 50);
+    }
+
+    function updateTeamBonusDisplay() {
+      const bHome = document.getElementById('bonus-home');
+      const bAway = document.getElementById('bonus-away');
+
+      if (homeQuarterFouls >= 5) {
+        bHome.textContent = `🚨 BONUS ATTIVO (${homeQuarterFouls}F)`;
+        bHome.classList.add('active-bonus');
+      } else {
+        bHome.textContent = `Falli Quarto: ${homeQuarterFouls}/4`;
+        bHome.classList.remove('active-bonus');
+      }
+
+      if (awayQuarterFouls >= 5) {
+        bAway.textContent = `🚨 BONUS ATTIVO (${awayQuarterFouls}F)`;
+        bAway.classList.add('active-bonus');
+      } else {
+        bAway.textContent = `Falli Quarto: ${awayQuarterFouls}/4`;
+        bAway.classList.remove('active-bonus');
+      }
+    }
+
+    function selectPeriod(num, label) {
+      const old = periodLabelText;
+      currentPeriod = num;
+      periodLabelText = label;
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById(`p-btn-${i}`).classList.toggle('active-period', i === num);
+      }
+      document.getElementById('period-badge').textContent = label;
+
+      homeQuarterFouls = 0;
+      awayQuarterFouls = 0;
+      updateTeamBonusDisplay();
+
+      if (label.includes('Overtime')) {
+        document.getElementById('input-minutes').value = 5;
+        document.getElementById('input-seconds').value = 0;
+      }
+      applyDurationSettings();
+      resetShotClock(24);
+
+      if (old !== label) {
+        logEvent(`⏱️ Inizio ${label}`, `Sirena Quarto (Falli squadra azzerati)`, getElapsedFormatted());
+      }
+    }
+
+    function quickScore(team, pts) {
+      const teamName = document.getElementById(`name-${team}`).value;
+      if (team === 'home') {
+        homeScore += pts;
+        document.getElementById('score-home').textContent = homeScore;
+      } else {
+        awayScore += pts;
+        document.getElementById('score-away').textContent = awayScore;
+      }
+      const label = pts === 3 ? '🎯 TRIPLA (+3)' : (pts === 2 ? '🏀 CANESTRO (+2)' : '☄️ TIRO LIBERO (+1)');
+      logEvent(label, `Squadra: ${teamName}`, getElapsedFormatted(), team, pts, 'SCORE');
+      resetShotClock(24);
+      saveState();
+    }
+
+    function renderRosters() {
+      ['home', 'away'].forEach(team => {
+        const list = document.getElementById(`list-${team}`);
+        const activeCount = players[team].filter(p => p.inField).length;
+        document.getElementById(`count-${team}`).textContent = `${activeCount} In Campo`;
+
+        list.innerHTML = players[team].map((p, idx) => `
+          <div class="player-row ${p.inField ? '' : 'bench-mode'}">
+            <div class="player-left-info" onclick="openPlayerActionModal('${team}', ${idx})">
+              <span class="player-num-tag">#${p.num}</span>
+              <strong style="color:#fff;">${p.name}</strong>
+              ${(p.fouls || 0) > 0 ? `<span class="fouls-tag ${p.fouls >= 5 ? 'foul-out' : ''}">${p.fouls}F</span>` : ''}
+            </div>
+            <button class="status-toggle ${p.inField ? 'field' : ''}" onclick="togglePlayerStatus('${team}', ${idx})">
+              ${p.inField ? 'CAMPO' : 'PANCA'}
+            </button>
+            <button class="btn-icon-del" onclick="deletePlayer('${team}', ${idx})">✕</button>
+          </div>
+        `).join('');
+      });
+
+      const hCount = players.home.filter(p => p.inField).length;
+      const aCount = players.away.filter(p => p.inField).length;
+      document.getElementById('format-badge').textContent = `${hCount} vs ${aCount}`;
+    }
+
+    function togglePlayerStatus(team, idx) {
+      players[team][idx].inField = !players[team][idx].inField;
+      renderRosters();
+      saveState();
+    }
+
+    function addPlayer(team) {
+      const numIn = document.getElementById(`in-${team}-num`);
+      const nameIn = document.getElementById(`in-${team}-name`);
+      if (!nameIn.value.trim()) return;
+      players[team].push({
+        id: Date.now(),
+        num: numIn.value.trim() || '?',
+        name: nameIn.value.trim(),
+        inField: true,
+        fouls: 0
+      });
+      numIn.value = '';
+      nameIn.value = '';
+      renderRosters();
+      saveState();
+    }
+
+    function deletePlayer(team, idx) {
+      if (confirm("Rimuovere giocatore dal roster?")) {
+        players[team].splice(idx, 1);
+        renderRosters();
+        saveState();
+      }
+    }
+
+    function openPlayerActionModal(team, idx) {
+      selectedPlayer = { team, idx };
+      const p = players[team][idx];
+      const teamName = document.getElementById(`name-${team}`).value;
+      document.getElementById('modal-player-title').textContent = `🏀 #${p.num} ${p.name} (${teamName}) [Falli: ${p.fouls || 0}/5]`;
+      document.getElementById('modal-p-num').value = p.num;
+      document.getElementById('modal-p-name').value = p.name;
+
+      const assistSelect = document.getElementById('modal-p-assist');
+      assistSelect.innerHTML = '<option value="">Nessun Assist</option>';
+      players[team].forEach((mate, i) => {
+        if (i !== idx) {
+          assistSelect.innerHTML += `<option value="#${mate.num} ${mate.name}">#${mate.num} ${mate.name}</option>`;
+        }
+      });
+
+      const subSelect = document.getElementById('modal-sub-target');
+      subSelect.innerHTML = '';
+      if (p.inField) {
+        subSelect.innerHTML = '<option value="" disabled selected>Cambia con panchinaro:</option>';
+        players[team].forEach((mate, i) => {
+          if (!mate.inField) {
+            subSelect.innerHTML += `<option value="${i}">Entra: #${mate.num} ${mate.name}</option>`;
+          }
+        });
+      } else {
+        subSelect.innerHTML = '<option value="" disabled selected>Cambia con giocatore in campo:</option>';
+        players[team].forEach((mate, i) => {
+          if (mate.inField) {
+            subSelect.innerHTML += `<option value="${i}">Esce: #${mate.num} ${mate.name}</option>`;
+          }
+        });
+      }
+
+      document.getElementById('action-modal').style.display = 'flex';
+    }
+
+    function executeSubstitution() {
+      if (!selectedPlayer) return;
+      const team = selectedPlayer.team;
+      const targetIdx = parseInt(document.getElementById('modal-sub-target').value);
+      if (isNaN(targetIdx)) return;
+
+      const pCurrent = players[team][selectedPlayer.idx];
+      const pTarget = players[team][targetIdx];
+      const teamName = document.getElementById(`name-${team}`).value;
+      const min = getElapsedFormatted();
+
+      pCurrent.inField = !pCurrent.inField;
+      pTarget.inField = !pTarget.inField;
+
+      const inPlayer = pCurrent.inField ? pCurrent : pTarget;
+      const outPlayer = pCurrent.inField ? pTarget : pCurrent;
+
+      logEvent(`🔄 Cambio`, `Entra #${inPlayer.num} ${inPlayer.name}, Esce #${outPlayer.num} ${outPlayer.name} (${teamName})`, min, team);
+
+      closeModal('action-modal');
+      renderRosters();
+      saveState();
+    }
+
+    function savePlayerEdit() {
+      if (!selectedPlayer) return;
+      const p = players[selectedPlayer.team][selectedPlayer.idx];
+      p.num = document.getElementById('modal-p-num').value.trim() || p.num;
+      p.name = document.getElementById('modal-p-name').value.trim() || p.name;
+      renderRosters();
+      saveState();
+      closeModal('action-modal');
+    }
+
+    function triggerAction(type) {
+      if (!selectedPlayer) return;
+      const team = selectedPlayer.team;
+      const p = players[team][selectedPlayer.idx];
+      const teamName = document.getElementById(`name-${team}`).value;
+      const assist = document.getElementById('modal-p-assist').value;
+      const min = getElapsedFormatted();
+
+      p.num = document.getElementById('modal-p-num').value.trim() || p.num;
+      p.name = document.getElementById('modal-p-name').value.trim() || p.name;
+
+      if (type === '3PT' || type === '2PT' || type === '1PT') {
+        const pts = type === '3PT' ? 3 : (type === '2PT' ? 2 : 1);
+        if (team === 'home') { homeScore += pts; document.getElementById('score-home').textContent = homeScore; }
+        else { awayScore += pts; document.getElementById('score-away').textContent = awayScore; }
+        
+        let label = type === '3PT' ? `🎯 TRIPLA (+3) #${p.num} ${p.name}` : (type === '2PT' ? `🏀 CANESTRO (+2) #${p.num} ${p.name}` : `☄️ LIBERO (+1) #${p.num} ${p.name}`);
+        let subText = `Squadra: ${teamName}`;
+        if (assist) subText += ` • 🅰️ Assist: ${assist}`;
+        logEvent(label, subText, min, team, pts, 'SCORE');
+        resetShotClock(24);
+      } else if (type === 'FOUL') {
+        p.fouls = (p.fouls || 0) + 1;
+        if (team === 'home') homeQuarterFouls++;
+        else awayQuarterFouls++;
+        updateTeamBonusDisplay();
+
+        let foulLabel = `⚠️ Fallo Personale (${p.fouls}/5): #${p.num} ${p.name}`;
+        logEvent(foulLabel, `Squadra: ${teamName}`, min, team, 0, 'FOUL', p.id);
+        
+        if (p.fouls >= 5) {
+          alert(`⚠️ #${p.num} ${p.name} ha commesso 5 falli! (Escluso dal campo)`);
+        }
+      } else if (type === 'REBOUND') {
+        logEvent(`🖐️ Rimbalzo: #${p.num} ${p.name}`, `Squadra: ${teamName}`, min, team, 0, 'REBOUND');
+        resetShotClock(14);
+      }
+
+      renderRosters();
+      closeModal('action-modal');
+      saveState();
+    }
+
+    function logEvent(title, sub, minute, team = null, pts = 0, type = 'OTHER', playerId = null) {
+      events.unshift({ id: Date.now(), title, sub, minute, team, pts, type, playerId });
+      renderEvents();
+      saveState();
+    }
+
+    function renderEvents() {
+      const list = document.getElementById('events-list');
+      document.getElementById('event-count').textContent = `${events.length} Eventi`;
+      if (events.length === 0) {
+        list.innerHTML = '<div style="color:var(--text-muted); font-size:0.75rem; text-align:center; padding:8px;">Nessun evento registrato.</div>';
+        return;
+      }
+      list.innerHTML = events.map(e => `
+        <div class="event-item">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <strong style="color:#fff;">${e.title}</strong>
+            <span style="color:var(--text-muted); font-size:0.7rem;">${e.sub}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="event-minute">${e.minute}</span>
+            <button class="btn-icon-del" onclick="deleteEvent(${e.id})">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteEvent(id) {
+      const ev = events.find(e => e.id === id);
+      if (ev) {
+        if (ev.pts > 0) {
+          if (ev.team === 'home') { homeScore = Math.max(0, homeScore - ev.pts); document.getElementById('score-home').textContent = homeScore; }
+          else if (ev.team === 'away') { awayScore = Math.max(0, awayScore - ev.pts); document.getElementById('score-away').textContent = awayScore; }
+        }
+        if (ev.type === 'FOUL') {
+          if (ev.team === 'home') homeQuarterFouls = Math.max(0, homeQuarterFouls - 1);
+          else awayQuarterFouls = Math.max(0, awayQuarterFouls - 1);
+          updateTeamBonusDisplay();
+
+          if (ev.playerId) {
+            const p = [...players.home, ...players.away].find(x => x.id === ev.playerId);
+            if (p && p.fouls > 0) p.fouls--;
+            renderRosters();
+          }
+        }
+      }
+      events = events.filter(e => e.id !== id);
+      renderEvents();
+      saveState();
+    }
+
+    function updateColors() {
+      const hColor = document.getElementById('picker-home').value;
+      const aColor = document.getElementById('picker-away').value;
+      document.documentElement.style.setProperty('--home-color', hColor);
+      document.documentElement.style.setProperty('--away-color', aColor);
+      document.getElementById('card-home').style.setProperty('--team-border-color', hColor);
+      document.getElementById('card-away').style.setProperty('--team-border-color', aColor);
+
+      const rHome = document.getElementById('roster-card-home');
+      const rAway = document.getElementById('roster-card-away');
+      if (rHome) rHome.style.setProperty('--team-border-color', hColor);
+      if (rAway) rAway.style.setProperty('--team-border-color', aColor);
+
+      saveState();
+    }
+
+    function confirmResetOnly() {
+      if (confirm("Resettare la partita senza archiviarla?")) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        if (isShotClockRunning) toggleShotClock();
+        homeScore = 0; awayScore = 0; homeQuarterFouls = 0; awayQuarterFouls = 0; events = [];
+        document.getElementById('score-home').textContent = '0';
+        document.getElementById('score-away').textContent = '0';
+        document.getElementById('btn-start').textContent = '▶ Avvia';
+        document.getElementById('btn-start').classList.remove('paused');
+        selectPeriod(1, '1° Quarto');
+        
+        players = {
+          home: [
+            { id: 1, num: "1", name: "Playmaker (PG)", inField: true, fouls: 0 },
+            { id: 2, num: "2", name: "Guardia (SG)", inField: true, fouls: 0 },
+            { id: 3, num: "3", name: "Ala Piccola (SF)", inField: true, fouls: 0 },
+            { id: 4, num: "4", name: "Ala Grande (PF)", inField: true, fouls: 0 },
+            { id: 5, num: "5", name: "Centro (C)", inField: true, fouls: 0 },
+            { id: 6, num: "6", name: "Riserva 1", inField: false, fouls: 0 },
+            { id: 7, num: "7", name: "Riserva 2", inField: false, fouls: 0 }
+          ],
+          away: [
+            { id: 101, num: "1", name: "Playmaker (PG)", inField: true, fouls: 0 },
+            { id: 102, num: "2", name: "Guardia (SG)", inField: true, fouls: 0 },
+            { id: 103, num: "3", name: "Ala Piccola (SF)", inField: true, fouls: 0 },
+            { id: 104, num: "4", name: "Ala Grande (PF)", inField: true, fouls: 0 },
+            { id: 105, num: "5", name: "Centro (C)", inField: true, fouls: 0 },
+            { id: 106, num: "6", name: "Riserva 1", inField: false, fouls: 0 },
+            { id: 107, num: "7", name: "Riserva 2", inField: false, fouls: 0 }
+          ]
+        };
+        
+        renderRosters();
+        renderEvents();
+        updateTeamBonusDisplay();
+        localStorage.removeItem('basket_state_v2');
+      }
+    }
+
+    function confirmEndMatch() {
+      if (confirm("Terminare e salvare la partita nello storico?")) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+        const hName = document.getElementById('name-home').value;
+        const aName = document.getElementById('name-away').value;
+
+        const match = {
+          id: Date.now(),
+          title: `${hName} vs ${aName}`,
+          date: dateStr,
+          homeName: hName,
+          awayName: aName,
+          homeScore, awayScore,
+          events: [...events]
+        };
+        matchHistory.unshift(match);
+        localStorage.setItem('basket_history_v2', JSON.stringify(matchHistory));
+        alert("Partita archiviata con successo!");
+        confirmResetOnly();
+      }
+    }
+
+    function openHistoryModal() {
+      const content = document.getElementById('history-list-content');
+      if (matchHistory.length === 0) {
+        content.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:12px;">Nessuna partita archiviata.</p>';
+      } else {
+        content.innerHTML = matchHistory.map(m => `
+          <div class="history-card">
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted);">
+              <span>📅 ${m.date}</span>
+              <span style="color:var(--accent-orange); font-weight:bold;">${m.events.length} Eventi</span>
+            </div>
+            <div style="font-weight:900; text-align:center; font-size:1.05rem; margin:2px 0;">${m.title}</div>
+            <div style="font-weight:bold; text-align:center; font-size:0.95rem; color:#fff;">
+              ${m.homeName} ${m.homeScore} - ${m.awayScore} ${m.awayName}
+            </div>
+            <button class="btn-sec" style="background:var(--accent-orange); color:#fff; font-weight:900; border:none; padding:7px; margin-top:4px;" onclick="openDetailModal(${m.id})">📖 Tabellino Completo</button>
+          </div>
+        `).join('');
+      }
+      document.getElementById('history-modal').style.display = 'flex';
+    }
+
+    function openDetailModal(id) {
+      activeArchivedId = id;
+      const m = matchHistory.find(x => x.id === id);
+      if (!m) return;
+      document.getElementById('detail-title').value = m.title;
+      document.getElementById('detail-score').textContent = `${m.homeName} ${m.homeScore} - ${m.awayScore} ${m.awayName}`;
+      document.getElementById('detail-date').textContent = `Data: ${m.date}`;
+
+      const evList = document.getElementById('detail-events');
+      if (m.events.length === 0) {
+        evList.innerHTML = '<span style="color:var(--text-muted); font-size:0.75rem;">Nessun evento registrato.</span>';
+      } else {
+        evList.innerHTML = m.events.map(e => `
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding:3px 0;">
+            <span>${e.title} <small style="color:var(--text-muted);">(${e.sub})</small></span>
+            <span style="font-family:monospace; color:var(--accent-orange); font-weight:bold;">${e.minute}</span>
+          </div>
+        `).join('');
+      }
+      closeModal('history-modal');
+      document.getElementById('match-detail-modal').style.display = 'flex';
+    }
+
+    function saveRenamedHistory() {
+      const m = matchHistory.find(x => x.id === activeArchivedId);
+      if (m) {
+        m.title = document.getElementById('detail-title').value.trim() || `${m.homeName} vs ${m.awayName}`;
+        localStorage.setItem('basket_history_v2', JSON.stringify(matchHistory));
+        alert("Modifiche salvate!");
+      }
+    }
+
+    function deleteArchivedMatch() {
+      if (confirm("Eliminare definitivamente questa partita?")) {
+        matchHistory = matchHistory.filter(x => x.id !== activeArchivedId);
+        localStorage.setItem('basket_history_v2', JSON.stringify(matchHistory));
+        closeModal('match-detail-modal');
+        openHistoryModal();
+      }
+    }
+
+    function buildShareSummary(title, hName, hScore, aName, aScore, evs) {
+      let text = `🏀 TABELLINO BASKET: ${title}\n`;
+      text += `🏆 FINALE: ${hName} ${hScore} - ${aScore} ${aName}\n`;
+      text += `\n📜 CRONACA:\n`;
+      if (evs.length === 0) {
+        text += `- Nessun evento registrato.\n`;
+      } else {
+        evs.slice().reverse().forEach(e => {
+          text += `• [${e.minute}] ${e.title} (${e.sub})\n`;
+        });
+      }
+      return text;
+    }
+
+    function shareCurrentMatch() {
+      const hName = document.getElementById('name-home').value;
+      const aName = document.getElementById('name-away').value;
+      const txt = buildShareSummary(`${hName} vs ${aName}`, hName, homeScore, aName, awayScore, events);
+      if (navigator.share) navigator.share({ text: txt }).catch(() => {});
+      else { navigator.clipboard.writeText(txt); alert("Tabellino basket copiato negli appunti!"); }
+    }
+
+    function shareArchivedMatch() {
+      const m = matchHistory.find(x => x.id === activeArchivedId);
+      if (!m) return;
+      const txt = buildShareSummary(m.title, m.homeName, m.homeScore, m.awayName, m.awayScore, m.events);
+      if (navigator.share) navigator.share({ text: txt }).catch(() => {});
+      else { navigator.clipboard.writeText(txt); alert("Tabellino archiviato copiato negli appunti!"); }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function saveState() {
+      const state = {
+        currentPeriod, periodLabelText, homeScore, awayScore,
+        homeQuarterFouls, awayQuarterFouls,
+        currentSeconds, durationSeconds, timerMode, shotClockSeconds,
+        homeName: document.getElementById('name-home').value,
+        awayName: document.getElementById('name-away').value,
+        players, events
+      };
+      localStorage.setItem('basket_state_v2', JSON.stringify(state));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('basket_state_v2');
+      if (saved) {
+        try {
+          const d = JSON.parse(saved);
+          homeScore = d.homeScore || 0; awayScore = d.awayScore || 0;
+          homeQuarterFouls = d.homeQuarterFouls || 0;
+          awayQuarterFouls = d.awayQuarterFouls || 0;
+          document.getElementById('score-home').textContent = homeScore;
+          document.getElementById('score-away').textContent = awayScore;
+          if (d.homeName) document.getElementById('name-home').value = d.homeName;
+          if (d.awayName) document.getElementById('name-away').value = d.awayName;
+          if (d.players) players = d.players;
+          if (d.events) events = d.events;
+          if (d.durationSeconds) durationSeconds = d.durationSeconds;
+          if (d.currentSeconds !== undefined) currentSeconds = d.currentSeconds;
+          if (d.shotClockSeconds !== undefined) shotClockSeconds = d.shotClockSeconds;
+          if (d.timerMode) setTimerMode(d.timerMode);
+          if (d.currentPeriod) selectPeriod(d.currentPeriod, d.periodLabelText || '1° Quarto');
+        } catch(e) {}
+      } else {
+        selectPeriod(1, '1° Quarto');
+      }
+      renderRosters();
+      renderEvents();
+      updateColors();
+      updateShotClockDisplay();
+      updateTeamBonusDisplay();
+    }
+
+    loadState();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
